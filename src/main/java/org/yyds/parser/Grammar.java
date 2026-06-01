@@ -100,9 +100,8 @@ public class Grammar {
         add(NonTerminal.ACCESS_SPEC_OPT, EPSILON);
         add(NonTerminal.MEMBER, nt(NonTerminal.TYPE), t(TokenType.IDENTIFIER), nt(NonTerminal.DECL_TAIL));
 
-        // 语句 -> 类型 标识符 语句尾部 ; | 标识符 标识符语句尾部 ; | if 语句 | while 语句 | return 语句 ; | 块
-        // 表示语句可以是一个变量声明语句，一个赋值或函数调用语句，一个 if 语句，
-        // 一个 while 语句，一个 return 语句，或者一个块语句。
+        // 语句 -> 类型 标识符 变量声明尾部 ; | 标识符 = 表达式 ; | if 语句 | while 语句 | return 语句 ; | 块
+        // 当前语句文法不支持函数调用、for 循环、自增自减或复合赋值。
         add(NonTerminal.BLOCK, t(TokenType.LBRACE), nt(NonTerminal.STMT_LIST), t(TokenType.RBRACE));
         add(NonTerminal.STMT_LIST, nt(NonTerminal.STMT), nt(NonTerminal.STMT_LIST));
         add(NonTerminal.STMT_LIST, EPSILON);

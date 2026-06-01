@@ -58,7 +58,9 @@ java -cp target/classes org.yyds.gui.CompilerGui
 
 语法分析器位于 `src/main/java/org/yyds/parser`。文法集中定义在 `Grammar` 中，`Production`、`GrammarSymbol` 和 `NonTerminal` 表示产生式与符号。`FirstFollowCalculator` 计算 FIRST/FOLLOW 集，`ParseTableBuilder` 构建 LL(1) 预测分析表，`Parser` 以栈驱动方式进行预测分析并构建 `ParseTreeNode`。
 
-当需要修改可接受语法时，应联动更新相关类型：新增终结符时改 `TokenType`/`Lexer`，新增产生式时改 `NonTerminal` 和 `Grammar`，如果语法树形状变化，再调整语义树遍历逻辑。
+当需要修改可接受语法时，应联动更新相关类型：新增终结符时改 `TokenType`/`Lexer`，新增产生式时改 `NonTerminal` 和 `Grammar`
+，如果语法树形状变化，再调整语义树遍历逻辑。当前词法层识别的 `for`、自增自减和复合赋值等 C++ 风格 Token
+尚未进入语法子集；表达式也不支持函数调用、成员访问或短路求值。
 
 ### 语义分析与 IR
 

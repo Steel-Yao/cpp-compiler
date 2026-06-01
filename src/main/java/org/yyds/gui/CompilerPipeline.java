@@ -13,7 +13,16 @@ import org.yyds.semantic.SemanticAnalyzer;
 
 import java.util.List;
 
+/**
+ * Swing 界面复用的编译流水线门面，按词法、语法、语义、优化和目标代码生成顺序执行。
+ */
 public class CompilerPipeline {
+    /**
+     * 编译一段 C++ 子集源码，并收集 GUI 各标签页需要展示的中间结果。
+     *
+     * @param source 待编译源码，允许为空字符串
+     * @return 各编译阶段的格式化结果和耗时
+     */
     public CompilationResult compile(String source) {
         long startNanos = System.nanoTime();
 

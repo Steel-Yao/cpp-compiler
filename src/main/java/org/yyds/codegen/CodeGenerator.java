@@ -6,11 +6,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * 将教学型四元式翻译为伪汇编目标代码。
+ *
+ * <p>当前实现使用固定工作寄存器 {@code R1}：每条算术、关系或逻辑指令先把左操作数加载到
+ * {@code R1}，再与右操作数运算并写回结果位置。它不做寄存器分配，也不生成真实平台汇编。
+ */
 public class CodeGenerator {
     private static final String WORK_REGISTER = "R1";
     private static final Set<String> BINARY_OPS = Set.of("+", "-", "*", "/", "%", "&&", "||", "<", "<=", ">", ">=", "==", "!=", "LT", "LE", "GT", "GE", "EQ", "NEQ");
     private static final Set<String> UNARY_OPS = Set.of("uminus", "!");
 
+    /**
+     * 翻译完整四元式序列。
+     *
+     * @param quadruples 语义分析或优化阶段生成的四元式序列
+     * @return 伪汇编指令序列
+     * @throws CodeGenerationException 当四元式操作码或操作数字段不符合约定时抛出
+     */
     public List<TargetInstruction> generate(List<Quadruple> quadruples) {
         List<TargetInstruction> instructions = new ArrayList<>();
         for (Quadruple quadruple : quadruples) {

@@ -56,7 +56,7 @@ int a = 10 + b;
 - 赋值语句
 - 表达式
 - 条件语句
-- 循环语句
+- while 循环语句
 - 代码块
 - return 语句
 - 函数定义
@@ -123,7 +123,7 @@ Decl -> VarDecl | FuncDecl | ClassDecl
 ```text
 VarDecl -> Type IDENTIFIER VarDeclTail SEMICOLON
 VarDeclTail -> ASSIGN Expr | ε
-Type -> INT | CHAR | FLOAT | DOUBLE | BOOL | VOID | IDENTIFIER
+Type -> INT | CHAR | FLOAT | DOUBLE | BOOL | VOID
 ```
 
 例如：
@@ -157,7 +157,7 @@ MemberList -> Member MemberList | ε
 Member -> VarDecl | FuncDecl
 ```
 
-这部分为类和成员定义预留基础结构。
+这部分支持类声明外壳和成员变量/成员函数定义，用于教学展示作用域和成员登记；当前文法不支持对象实例化、成员访问或方法调用。
 
 ### 4.6 语句块与语句序列
 
@@ -168,9 +168,7 @@ Stmt -> VarDecl
       | AssignStmt SEMICOLON
       | IfStmt
       | WhileStmt
-      | ForStmt
       | ReturnStmt SEMICOLON
-      | Expr SEMICOLON
       | Block
 ```
 
@@ -191,11 +189,9 @@ ElsePart -> ELSE Stmt | ε
 
 ```text
 WhileStmt -> WHILE LPAREN Cond RPAREN Stmt
-ForStmt -> FOR LPAREN ForInit SEMICOLON CondOpt SEMICOLON ForStepOpt RPAREN Stmt
-ForInit -> AssignStmt | VarDecl | ε
-CondOpt -> Cond | ε
-ForStepOpt -> AssignStmt | Expr | ε
 ```
+
+当前文法只支持 `while` 循环。词法分析器可以识别 `for`、`++`、`--` 和复合赋值 Token，但语法分析器不会接受这些结构。
 
 ### 4.10 返回语句
 
@@ -226,7 +222,7 @@ UnaryExpr -> (PLUS | MINUS | NOT) UnaryExpr | Primary
 Primary -> IDENTIFIER | INT_LITERAL | FLOAT_LITERAL | CHAR_LITERAL | STRING_LITERAL | TRUE | FALSE | LPAREN Expr RPAREN
 ```
 
-这一分层结构的目的是明确表达式优先级：
+这一分层结构的目的是明确表达式优先级。函数调用表达式、成员访问表达式和独立表达式语句不在当前子集内。
 
 - 逻辑或 `||`
 - 逻辑与 `&&`

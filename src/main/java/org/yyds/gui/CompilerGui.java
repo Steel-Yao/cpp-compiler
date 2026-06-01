@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 
+/**
+ * 编译器的 Swing 可视化入口，提供源码输入区和各编译阶段输出标签页。
+ */
 public class CompilerGui extends JFrame {
     private static final double UI_SCALE = 1.25;
     private static final String CODE_FONT_NAME = "Maple Mono NF CN";

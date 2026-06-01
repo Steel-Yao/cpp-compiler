@@ -42,6 +42,10 @@ public class IRGenerator {
     /**
      * 追加一条四元式。
      *
+     * <p>当前流水线约定的操作码包括：赋值 {@code =}，算术 {@code + - * / %}，关系
+     * {@code < <= > >= == !=}，逻辑 {@code && || !}，一元负号 {@code uminus}，标签
+     * {@code label}，跳转 {@code goto/jz/jnz}，以及 {@code return}。
+     *
      * @param op     操作码
      * @param arg1   第一个操作数
      * @param arg2   第二个操作数

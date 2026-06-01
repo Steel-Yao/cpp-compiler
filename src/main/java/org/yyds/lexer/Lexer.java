@@ -103,6 +103,9 @@ public class Lexer {
 
     /**
      * 扫描完整源代码，返回可供语法分析器使用的 Token 序列。
+     *
+     * <p>词法层会识别部分当前文法尚未消费的 C++ 风格词素，例如 {@code for}、自增自减和复合赋值；
+     * 这些 Token 会在语法阶段被拒绝。
      */
     public List<Token> tokenize() {
         List<Token> tokens = new ArrayList<>();
@@ -141,6 +144,11 @@ public class Lexer {
         return tokens;
     }
 
+    /**
+     * 获取词法阶段记录的标识符和常量表。
+     *
+     * @return 本次词法分析的符号表
+     */
     public SymbolTable getSymbolTable() {
         return symbolTable;
     }

@@ -3,13 +3,7 @@ package org.yyds.parser;
 import org.yyds.lexer.Token;
 import org.yyds.lexer.TokenType;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 表驱动预测分析器，负责把 Token 序列转换为语法分析树。
@@ -19,12 +13,22 @@ public class Parser {
     private final FirstFollowCalculator firstFollowCalculator;
     private final Map<NonTerminal, Map<TokenType, Production>> parseTable;
 
+    /**
+     * 创建预测分析器，并立即根据内置文法构造 FIRST/FOLLOW 集和 LL(1) 分析表。
+     */
     public Parser() {
         this.grammar = new Grammar();
         this.firstFollowCalculator = new FirstFollowCalculator(grammar);
         this.parseTable = new ParseTableBuilder(grammar, firstFollowCalculator).build();
     }
 
+    /**
+     * 使用表驱动 LL(1) 算法将 Token 序列转换为语法树。
+     *
+     * @param tokens 词法分析阶段生成的 Token 序列；末尾可以省略 EOF
+     * @return 以 PROGRAM 为根的语法树
+     * @throws ParserException 当输入 Token 不能匹配当前文法时抛出
+     */
     public ParseTreeNode parse(List<Token> tokens) {
         List<Token> input = ensureEof(tokens);
         int position = 0;
@@ -82,14 +86,29 @@ public class Parser {
         return root;
     }
 
+    /**
+     * 获取内置文法的 FIRST 集，供教学展示和调试分析表时使用。
+     *
+     * @return 非终结符到 FIRST 终结符集合的映射
+     */
     public Map<NonTerminal, Set<TokenType>> firstSets() {
         return firstFollowCalculator.firstSets();
     }
 
+    /**
+     * 获取内置文法的 FOLLOW 集，供教学展示和调试分析表时使用。
+     *
+     * @return 非终结符到 FOLLOW 终结符集合的映射
+     */
     public Map<NonTerminal, Set<TokenType>> followSets() {
         return firstFollowCalculator.followSets();
     }
 
+    /**
+     * 获取根据 FIRST/FOLLOW 集构造出的 LL(1) 预测分析表。
+     *
+     * @return 非终结符和展望 Token 到产生式的映射
+     */
     public Map<NonTerminal, Map<TokenType, Production>> parseTable() {
         return parseTable;
     }
@@ -98,7 +117,7 @@ public class Parser {
         if (tokens == null || tokens.isEmpty()) {
             return List.of(new Token(TokenType.EOF, "", 1, 1));
         }
-        Token last = tokens.get(tokens.size() - 1);
+        Token last = tokens.getLast();
         if (last.type() == TokenType.EOF) {
             return tokens;
         }

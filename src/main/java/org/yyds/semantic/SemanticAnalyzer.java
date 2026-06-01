@@ -286,10 +286,15 @@ public class SemanticAnalyzer {
         String endLabel = irGenerator.newLabel();
         irGenerator.emit("jz", cond.place(), null, falseLabel);
         visit(children.get(4));
-        irGenerator.emit("goto", null, null, endLabel);
+        ParseTreeNode elsePart = children.get(5);
+        if (hasElseBranch(elsePart)) {
+            irGenerator.emit("goto", null, null, endLabel);
+            irGenerator.emit("label", null, null, falseLabel);
+            visit(elsePart.getChildren().get(1));
+            irGenerator.emit("label", null, null, endLabel);
+            return;
+        }
         irGenerator.emit("label", null, null, falseLabel);
-        visit(children.get(5));
-        irGenerator.emit("label", null, null, endLabel);
     }
 
     /**
@@ -486,8 +491,11 @@ public class SemanticAnalyzer {
         }
         TokenType op = tokenType(node.getChildren().get(0));
         ExprResult operand = evalExpr(node.getChildren().get(1));
+        if (op == TokenType.PLUS) {
+            return operand;
+        }
         String temp = irGenerator.newTemp();
-        irGenerator.emit(op == TokenType.MINUS ? "uminus" : op == TokenType.NOT ? "!" : "+", operand.place(), null, temp);
+        irGenerator.emit(op == TokenType.MINUS ? "uminus" : "!", operand.place(), null, temp);
         return new ExprResult(temp, op == TokenType.NOT ? TypeKind.BOOL : operand.type());
     }
 
@@ -608,6 +616,12 @@ public class SemanticAnalyzer {
         }
         TokenType firstType = tokenType(node.getChildren().getFirst());
         return firstType != null && mapTokenToType(firstType) != TypeKind.UNKNOWN;
+    }
+
+    private boolean hasElseBranch(ParseTreeNode node) {
+        return node != null
+                && node.getChildren().size() >= 2
+                && isSymbol(node.getChildren().getFirst(), TokenType.ELSE);
     }
 
     private boolean isSymbol(ParseTreeNode node, TokenType type) {

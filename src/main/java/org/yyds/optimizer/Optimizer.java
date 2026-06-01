@@ -3,16 +3,7 @@ package org.yyds.optimizer;
 import org.yyds.ir.Quadruple;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class Optimizer {
     private static final Set<String> ARITHMETIC_OPS = Set.of("+", "-", "*", "/", "%");
@@ -265,6 +256,9 @@ public class Optimizer {
         if (!isNumericLiteral(arg1) || !isNumericLiteral(arg2)) {
             return null;
         }
+        if ("%".equals(op) && (!isIntegerLiteral(arg1) || !isIntegerLiteral(arg2))) {
+            return null;
+        }
 
         BigDecimal left = new BigDecimal(arg1);
         BigDecimal right = new BigDecimal(arg2);
@@ -335,6 +329,10 @@ public class Optimizer {
 
     private boolean isNumericLiteral(String value) {
         return value != null && value.matches("-?\\d+(\\.\\d+)?");
+    }
+
+    private boolean isIntegerLiteral(String value) {
+        return value != null && value.matches("-?\\d+");
     }
 
     private boolean isBooleanLiteral(String value) {
