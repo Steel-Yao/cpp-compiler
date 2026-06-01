@@ -100,8 +100,8 @@ public class Grammar {
         add(NonTerminal.ACCESS_SPEC_OPT, EPSILON);
         add(NonTerminal.MEMBER, nt(NonTerminal.TYPE), t(TokenType.IDENTIFIER), nt(NonTerminal.DECL_TAIL));
 
-        // 语句 -> 类型 标识符 变量声明尾部 ; | 标识符 = 表达式 ; | if 语句 | while 语句 | return 语句 ; | 块
-        // 当前语句文法不支持函数调用、for 循环、自增自减或复合赋值。
+        // 语句 -> 类型 标识符 变量声明尾部 ; | 标识符更新 ; | if 语句 | while 语句 | for 语句 | return 语句 ; | 块
+        // 标识符更新支持普通赋值、复合赋值和自增自减。
         add(NonTerminal.BLOCK, t(TokenType.LBRACE), nt(NonTerminal.STMT_LIST), t(TokenType.RBRACE));
         add(NonTerminal.STMT_LIST, nt(NonTerminal.STMT), nt(NonTerminal.STMT_LIST));
         add(NonTerminal.STMT_LIST, EPSILON);
@@ -110,16 +110,33 @@ public class Grammar {
         add(NonTerminal.STMT, t(TokenType.IDENTIFIER), nt(NonTerminal.IDENTIFIER_STMT_TAIL), t(TokenType.SEMICOLON));
         add(NonTerminal.STMT, nt(NonTerminal.IF_STMT));
         add(NonTerminal.STMT, nt(NonTerminal.WHILE_STMT));
+        add(NonTerminal.STMT, nt(NonTerminal.FOR_STMT));
         add(NonTerminal.STMT, nt(NonTerminal.RETURN_STMT), t(TokenType.SEMICOLON));
         add(NonTerminal.STMT, nt(NonTerminal.BLOCK));
 
         add(NonTerminal.IDENTIFIER_STMT_TAIL, t(TokenType.ASSIGN), nt(NonTerminal.EXPR));
+        add(NonTerminal.IDENTIFIER_STMT_TAIL, nt(NonTerminal.COMPOUND_ASSIGN_OP), nt(NonTerminal.EXPR));
+        add(NonTerminal.IDENTIFIER_STMT_TAIL, t(TokenType.INC));
+        add(NonTerminal.IDENTIFIER_STMT_TAIL, t(TokenType.DEC));
+        add(NonTerminal.COMPOUND_ASSIGN_OP, t(TokenType.PLUS_ASSIGN));
+        add(NonTerminal.COMPOUND_ASSIGN_OP, t(TokenType.MINUS_ASSIGN));
+        add(NonTerminal.COMPOUND_ASSIGN_OP, t(TokenType.STAR_ASSIGN));
+        add(NonTerminal.COMPOUND_ASSIGN_OP, t(TokenType.SLASH_ASSIGN));
+        add(NonTerminal.COMPOUND_ASSIGN_OP, t(TokenType.PERCENT_ASSIGN));
 
         add(NonTerminal.IF_STMT, t(TokenType.IF), t(TokenType.LPAREN), nt(NonTerminal.EXPR), t(TokenType.RPAREN), nt(NonTerminal.STMT), nt(NonTerminal.ELSE_PART));
         add(NonTerminal.ELSE_PART, t(TokenType.ELSE), nt(NonTerminal.STMT));
         add(NonTerminal.ELSE_PART, EPSILON);
 
         add(NonTerminal.WHILE_STMT, t(TokenType.WHILE), t(TokenType.LPAREN), nt(NonTerminal.EXPR), t(TokenType.RPAREN), nt(NonTerminal.STMT));
+        add(NonTerminal.FOR_STMT, t(TokenType.FOR), t(TokenType.LPAREN), nt(NonTerminal.FOR_INIT_OPT), t(TokenType.SEMICOLON), nt(NonTerminal.FOR_COND_OPT), t(TokenType.SEMICOLON), nt(NonTerminal.FOR_STEP_OPT), t(TokenType.RPAREN), nt(NonTerminal.STMT));
+        add(NonTerminal.FOR_INIT_OPT, nt(NonTerminal.TYPE), t(TokenType.IDENTIFIER), nt(NonTerminal.VAR_DECL_TAIL));
+        add(NonTerminal.FOR_INIT_OPT, t(TokenType.IDENTIFIER), nt(NonTerminal.IDENTIFIER_STMT_TAIL));
+        add(NonTerminal.FOR_INIT_OPT, EPSILON);
+        add(NonTerminal.FOR_COND_OPT, nt(NonTerminal.EXPR));
+        add(NonTerminal.FOR_COND_OPT, EPSILON);
+        add(NonTerminal.FOR_STEP_OPT, t(TokenType.IDENTIFIER), nt(NonTerminal.IDENTIFIER_STMT_TAIL));
+        add(NonTerminal.FOR_STEP_OPT, EPSILON);
         add(NonTerminal.RETURN_STMT, t(TokenType.RETURN), nt(NonTerminal.RETURN_EXPR_OPT));
         add(NonTerminal.RETURN_EXPR_OPT, nt(NonTerminal.EXPR));
         add(NonTerminal.RETURN_EXPR_OPT, EPSILON);

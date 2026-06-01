@@ -75,6 +75,26 @@ public enum NonTerminal {
      */
     IDENTIFIER_STMT_TAIL,
     /**
+     * 复合赋值操作符，用于 +=、-=、*=、/= 和 %=。
+     */
+    COMPOUND_ASSIGN_OP,
+    /**
+     * for 循环语句，由初始化、条件、步进和循环体组成。
+     */
+    FOR_STMT,
+    /**
+     * for 循环初始化部分，可为空、变量声明或标识符更新语句。
+     */
+    FOR_INIT_OPT,
+    /**
+     * for 循环条件部分，可为空；空条件按 true 处理。
+     */
+    FOR_COND_OPT,
+    /**
+     * for 循环步进部分，可为空或标识符更新语句。
+     */
+    FOR_STEP_OPT,
+    /**
      * 条件语句，由 if 关键字引导，包含一个条件表达式和一个语句块，可以选择性地包含一个 else 部分。
      */
     IF_STMT,

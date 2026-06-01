@@ -37,31 +37,36 @@ public class CompilerGui extends JFrame {
 
     private static final String SAMPLE_SOURCE = """
             class Demo {
-            	private:
-            		int x;
-            		double y;
-            		char tag;
-            	public:
-            		int main() {
-            			int a = 10;
-            			int b = 3;
-            			double rate = 2.5;
-            			char ch = 'A';
+                private:
+                    int x;
+                    double y;
+                    char tag;
+                public:
+                    int main() {
+                        int a = 10;
+                        int b = 3;
+                        double rate = 2.5;
+                        char ch = 'A';
             
-            			int folded = 2 + 3 * 4;
-            			int copy = folded;
-            			int result = copy + a;
+                        int folded = 2 + 3 * 4;
+                        int copy = folded;
+                        int result = copy + a;
             
-            			while (result < 30) {
-            				result = result + b;
-            			}
+                        for (int i = 0; i < 3; i++) {
+                            result += i;
+                        }
             
-            			if (result >= 30 && b != 0) {
-            				return result + 1;
-            			}
+                        while (result < 30) {
+                            result += b;
+                            b--;
+                        }
             
-            			return 0;
-            		}
+                        if (result >= 30 && b != 0) {
+                            return result + 1;
+                        }
+            
+                        return 0;
+                    }
             };
             """;
 

@@ -62,6 +62,7 @@ public class SemanticAnalyzer {
             case "STMT" -> visitStmt(node);
             case "IF_STMT" -> visitIfStmt(node);
             case "WHILE_STMT" -> visitWhileStmt(node);
+            case "FOR_STMT" -> visitForStmt(node);
             case "RETURN_STMT" -> visitReturnStmt(node);
             default -> visitChildren(node);
         }
@@ -244,7 +245,7 @@ public class SemanticAnalyzer {
             return;
         }
         if (isSymbol(first, TokenType.IDENTIFIER)) {
-            visitAssignStmt(children.get(1), first);
+            visitIdentifierStmtTail(children.get(1), first);
             return;
         }
         if (isSymbol(first, TokenType.IF)) {
@@ -253,6 +254,10 @@ public class SemanticAnalyzer {
         }
         if (isSymbol(first, TokenType.WHILE)) {
             visitWhileStmt(first.getChildren().isEmpty() ? node : first);
+            return;
+        }
+        if (isSymbol(first, TokenType.FOR)) {
+            visitForStmt(first.getChildren().isEmpty() ? node : first);
             return;
         }
         if (isSymbol(first, TokenType.RETURN)) {
@@ -266,6 +271,24 @@ public class SemanticAnalyzer {
         visitChildren(node);
     }
 
+    /**
+     * 处理标识符开头的更新语句。
+     */
+    private void visitIdentifierStmtTail(ParseTreeNode tail, ParseTreeNode identifier) {
+        TokenType op = tokenType(tail.getChildren().getFirst());
+        if (op == TokenType.ASSIGN) {
+            visitAssignStmt(tail, identifier);
+            return;
+        }
+        if (op == TokenType.INC || op == TokenType.DEC) {
+            emitSelfUpdate(identifier, op == TokenType.INC ? "+" : "-", "1");
+            return;
+        }
+        ParseTreeNode compoundOp = tail.getChildren().getFirst();
+        ExprResult right = evalExpr(tail.getChildren().get(1));
+        emitCompoundAssign(identifier, tokenType(compoundOp.getChildren().getFirst()), right);
+    }
+
     /** 处理赋值语句：先解析右值，再做类型检查并生成赋值 IR。 */
     private void visitAssignStmt(ParseTreeNode tail, ParseTreeNode identifier) {
         String name = tokenLexeme(identifier);
@@ -273,6 +296,37 @@ public class SemanticAnalyzer {
         ExprResult right = evalExpr(tail.getChildren().get(1));
         ensureAssignable(symbol.type(), right.type(), token(identifier));
         irGenerator.emit("=", right.place(), null, name);
+    }
+
+    private void emitCompoundAssign(ParseTreeNode identifier, TokenType assignmentOp, ExprResult right) {
+        String arithmeticOp = compoundArithmeticOp(assignmentOp);
+        emitSelfUpdate(identifier, arithmeticOp, right.place(), right.type());
+    }
+
+    private void emitSelfUpdate(ParseTreeNode identifier, String arithmeticOp, String rightPlace) {
+        emitSelfUpdate(identifier, arithmeticOp, rightPlace, TypeKind.INT);
+    }
+
+    private void emitSelfUpdate(ParseTreeNode identifier, String arithmeticOp, String rightPlace, TypeKind rightType) {
+        String name = tokenLexeme(identifier);
+        SymbolInfo symbol = resolveSymbol(name, token(identifier));
+        TypeKind resultType = widerNumeric(symbol.type(), rightType);
+        ensureNumeric(resultType, token(identifier));
+        ensureAssignable(symbol.type(), resultType, token(identifier));
+        String temp = irGenerator.newTemp();
+        irGenerator.emit(arithmeticOp, name, rightPlace, temp);
+        irGenerator.emit("=", temp, null, name);
+    }
+
+    private String compoundArithmeticOp(TokenType assignmentOp) {
+        return switch (assignmentOp) {
+            case PLUS_ASSIGN -> "+";
+            case MINUS_ASSIGN -> "-";
+            case STAR_ASSIGN -> "*";
+            case SLASH_ASSIGN -> "/";
+            case PERCENT_ASSIGN -> "%";
+            default -> throw new SemanticException("不支持的复合赋值操作符：" + assignmentOp);
+        };
     }
 
     /**
@@ -311,6 +365,49 @@ public class SemanticAnalyzer {
         visit(children.get(4));
         irGenerator.emit("goto", null, null, beginLabel);
         irGenerator.emit("label", null, null, endLabel);
+    }
+
+    /**
+     * 处理 for：初始化执行一次，条件为空时视为 true，步进在每轮循环体之后执行。
+     */
+    private void visitForStmt(ParseTreeNode node) {
+        List<ParseTreeNode> children = node.getChildren();
+        Scope saved = currentScope;
+        currentScope = new Scope(saved, "for");
+        visitForInit(children.get(2));
+        String beginLabel = irGenerator.newLabel();
+        String endLabel = irGenerator.newLabel();
+        irGenerator.emit("label", null, null, beginLabel);
+        ParseTreeNode condition = children.get(4);
+        if (!condition.getChildren().isEmpty() && !isEpsilon(condition.getChildren().getFirst())) {
+            ExprResult cond = evalExpr(condition.getChildren().getFirst());
+            ensureBooleanLike(cond.type(), token(condition));
+            irGenerator.emit("jz", cond.place(), null, endLabel);
+        }
+        visit(children.get(8));
+        visitForStep(children.get(6));
+        irGenerator.emit("goto", null, null, beginLabel);
+        irGenerator.emit("label", null, null, endLabel);
+        currentScope = saved;
+    }
+
+    private void visitForInit(ParseTreeNode node) {
+        if (node.getChildren().isEmpty() || isEpsilon(node.getChildren().getFirst())) {
+            return;
+        }
+        List<ParseTreeNode> children = node.getChildren();
+        if (isTypeNode(children.getFirst())) {
+            visitVarDecl(children, currentScope);
+            return;
+        }
+        visitIdentifierStmtTail(children.get(1), children.getFirst());
+    }
+
+    private void visitForStep(ParseTreeNode node) {
+        if (node.getChildren().isEmpty() || isEpsilon(node.getChildren().getFirst())) {
+            return;
+        }
+        visitIdentifierStmtTail(node.getChildren().get(1), node.getChildren().getFirst());
     }
 
     /**
@@ -566,6 +663,12 @@ public class SemanticAnalyzer {
     private void ensureBooleanLike(TypeKind type, Token token) {
         if (type != TypeKind.BOOL && !type.isNumeric()) {
             throw error("条件表达式应为布尔或数值类型，实际为 " + type, token);
+        }
+    }
+
+    private void ensureNumeric(TypeKind type, Token token) {
+        if (!type.isNumeric()) {
+            throw error("自增、自减和复合赋值需要数值类型，实际为 " + type, token);
         }
     }
 

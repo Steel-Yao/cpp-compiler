@@ -165,18 +165,26 @@ Member -> VarDecl | FuncDecl
 Block -> LBRACE StmtList RBRACE
 StmtList -> Stmt StmtList | ε
 Stmt -> VarDecl
-      | AssignStmt SEMICOLON
+      | IdentifierStmt SEMICOLON
       | IfStmt
       | WhileStmt
+      | ForStmt
       | ReturnStmt SEMICOLON
       | Block
 ```
 
-### 4.7 赋值语句
+### 4.7 标识符更新语句
 
 ```text
-AssignStmt -> IDENTIFIER ASSIGN Expr
+IdentifierStmt -> IDENTIFIER IdentifierStmtTail
+IdentifierStmtTail -> ASSIGN Expr
+                    | CompoundAssignOp Expr
+                    | INC
+                    | DEC
+CompoundAssignOp -> PLUS_ASSIGN | MINUS_ASSIGN | STAR_ASSIGN | SLASH_ASSIGN | PERCENT_ASSIGN
 ```
+
+这部分覆盖普通赋值、复合赋值以及后置自增自减，例如 `a = 1;`、`a += 2;`、`i++;`。
 
 ### 4.8 条件语句
 
@@ -189,9 +197,13 @@ ElsePart -> ELSE Stmt | ε
 
 ```text
 WhileStmt -> WHILE LPAREN Cond RPAREN Stmt
+ForStmt -> FOR LPAREN ForInitOpt SEMICOLON ForCondOpt SEMICOLON ForStepOpt RPAREN Stmt
+ForInitOpt -> Type IDENTIFIER VarDeclTail | IDENTIFIER IdentifierStmtTail | ε
+ForCondOpt -> Expr | ε
+ForStepOpt -> IDENTIFIER IdentifierStmtTail | ε
 ```
 
-当前文法只支持 `while` 循环。词法分析器可以识别 `for`、`++`、`--` 和复合赋值 Token，但语法分析器不会接受这些结构。
+当前 `for` 循环支持变量声明初始化、标识符更新初始化、可选条件和可选步进；条件为空时由语义阶段按恒真循环处理。
 
 ### 4.10 返回语句
 
@@ -264,7 +276,9 @@ FOLLOW(A) 表示在某个推导过程中，所有可能出现在非终结符 A �
 以下给出部分关键 FIRST 集的设计思路：
 
 ```text
-FIRST(Type) = { INT, CHAR, FLOAT, DOUBLE, BOOL, VOID, IDENTIFIER }
+FIRST(Type) = { INT, CHAR, FLOAT, DOUBLE, BOOL, VOID }
+FIRST(IdentifierStmtTail) = { ASSIGN, PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, SLASH_ASSIGN, PERCENT_ASSIGN, INC, DEC }
+FIRST(ForStmt) = { FOR }
 FIRST(Primary) = { IDENTIFIER, INT_LITERAL, FLOAT_LITERAL, CHAR_LITERAL, STRING_LITERAL, TRUE, FALSE, LPAREN }
 FIRST(UnaryExpr) = { PLUS, MINUS, NOT } ∪ FIRST(Primary)
 FIRST(MulExpr) = FIRST(UnaryExpr)
