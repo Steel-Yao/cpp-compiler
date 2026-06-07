@@ -39,4 +39,9 @@ build/
 .DS_Store
 
 ### Claude ###
+CLAUDE.md
 /.claude/
+
+### Codex ###
+.codex/
+AGENTS.md
