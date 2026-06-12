@@ -67,8 +67,11 @@ public class CodeGenerator {
         requireArg1(quadruple);
         requireArg2(quadruple);
         requireResult(quadruple);
+        // 1. 加载左操作数到工作寄存器
         emit(instructions, "LOAD", WORK_REGISTER, quadruple.arg1());
+        // 2. 执行二元操作
         emit(instructions, mapBinaryOp(quadruple.op()), WORK_REGISTER, quadruple.arg2());
+        // 3. 存储结果
         emit(instructions, "STORE", quadruple.result(), WORK_REGISTER);
     }
 
@@ -84,19 +87,19 @@ public class CodeGenerator {
         requireResult(quadruple);
         emit(instructions, "LABEL", quadruple.result());
     }
-
+    // 无条件跳转
     private void generateGoto(Quadruple quadruple, List<TargetInstruction> instructions) {
         requireResult(quadruple);
         emit(instructions, "JMP", quadruple.result());
     }
-
+    // 条件跳转（jz = jump if zero）
     private void generateConditionalJump(String op, Quadruple quadruple, List<TargetInstruction> instructions) {
         requireArg1(quadruple);
         requireResult(quadruple);
         emit(instructions, "LOAD", WORK_REGISTER, quadruple.arg1());
         emit(instructions, op, WORK_REGISTER, quadruple.result());
     }
-
+    // 返回指令
     private void generateReturn(Quadruple quadruple, List<TargetInstruction> instructions) {
         if (isBlank(quadruple.arg1())) {
             emit(instructions, "RET");
