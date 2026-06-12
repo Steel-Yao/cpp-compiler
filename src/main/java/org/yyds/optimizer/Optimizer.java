@@ -24,7 +24,7 @@ public class Optimizer {
         }
         return current;
     }
-
+//基本块划分
     public List<BasicBlock> splitBasicBlocks(List<Quadruple> input) {
         if (input.isEmpty()) {
             return List.of();
@@ -32,10 +32,11 @@ public class Optimizer {
 
         Set<Integer> leaders = new LinkedHashSet<>();
         Map<String, Integer> labelIndexes = new HashMap<>();
-        leaders.add(0);
+        leaders.add(0);// 第一条指令是 leader
 
         for (int i = 0; i < input.size(); i++) {
             Quadruple quad = input.get(i);
+            // 标签定义处是 leader
             if (isLabel(quad)) {
                 leaders.add(i);
                 labelIndexes.put(quad.result(), i);
@@ -44,17 +45,19 @@ public class Optimizer {
 
         for (int i = 0; i < input.size(); i++) {
             Quadruple quad = input.get(i);
+            // 跳转指令的下一条是 leader
             if (isJump(quad)) {
                 if (i + 1 < input.size()) {
                     leaders.add(i + 1);
                 }
+                // 跳转目标也是 leader
                 Integer target = labelIndexes.get(quad.result());
                 if (target != null) {
                     leaders.add(target);
                 }
             }
         }
-
+        // 步骤2：根据 leader 划分基本块
         List<Integer> sortedLeaders = leaders.stream().sorted().toList();
         List<BasicBlock> blocks = new ArrayList<>();
         for (int i = 0; i < sortedLeaders.size(); i++) {
@@ -72,11 +75,11 @@ public class Optimizer {
         }
         return cleanupJumps(removeDeadCode(optimized));
     }
-
+//公共子表达式消除
     private List<Quadruple> optimizeBlock(List<Quadruple> block) {
         Map<String, String> constants = new HashMap<>();
         Map<String, String> copies = new HashMap<>();
-        Map<ExpressionKey, String> expressions = new LinkedHashMap<>();
+        Map<ExpressionKey, String> expressions = new LinkedHashMap<>();// 表达式缓存：(op, arg1, arg2) → result
         List<Quadruple> result = new ArrayList<>();
 
         for (Quadruple quad : block) {
@@ -93,16 +96,17 @@ public class Optimizer {
                     result.add(optimized);
                     continue;
                 }
-
+                // 检查是否已经计算过相同表达式
                 ExpressionKey key = new ExpressionKey(op, arg1, arg2);
                 String existing = expressions.get(key);
                 if (existing != null) {
+                    // 复用已有结果
                     optimized = new Quadruple("=", existing, null, quad.result());
                     rememberAssignment(optimized, constants, copies, expressions);
                     result.add(optimized);
                     continue;
                 }
-
+                // 记录新表达式
                 if (quad.result() != null) {
                     expressions.put(key, quad.result());
                 }
@@ -147,16 +151,18 @@ public class Optimizer {
         copies.entrySet().removeIf(entry -> Objects.equals(entry.getValue(), result));
         expressions.entrySet().removeIf(entry -> Objects.equals(entry.getValue(), result) || entry.getKey().contains(result));
     }
-
+//死代码消除
     private List<Quadruple> removeDeadCode(List<Quadruple> input) {
         Set<String> live = new HashSet<>();
         List<Quadruple> reversed = new ArrayList<>();
-
+        // 从后向前遍历
         for (int i = input.size() - 1; i >= 0; i--) {
             Quadruple quad = input.get(i);
+            // 如果是纯操作且结果不活跃，则跳过（删除）
             if (isRemovablePureDefinition(quad) && !live.contains(quad.result())) {
                 continue;
             }
+            // 更新活跃变量集合
             removeDef(live, quad.result());
             addUse(live, quad.arg1());
             addUse(live, quad.arg2());
@@ -172,8 +178,9 @@ public class Optimizer {
         }
         return result;
     }
-
+//跳转优化
     private List<Quadruple> cleanupJumps(List<Quadruple> input) {
+        // 步骤1：解析跳转别名（如 L1: goto L2 → L1 是 L2 的别名）
         Map<String, String> aliases = new HashMap<>();
         for (int i = 0; i + 1 < input.size(); i++) {
             Quadruple current = input.get(i);
@@ -182,7 +189,7 @@ public class Optimizer {
                 aliases.put(current.result(), next.result());
             }
         }
-
+        // 步骤2：简化条件跳转
         List<Quadruple> rewritten = new ArrayList<>();
         for (Quadruple quad : input) {
             if (isJump(quad)) {
@@ -194,6 +201,7 @@ public class Optimizer {
 
         List<Quadruple> simplified = new ArrayList<>();
         for (Quadruple quad : rewritten) {
+            // jz true, label → 永远不跳转，删除
             if ("jz".equals(quad.op()) && isBooleanLiteral(quad.arg1())) {
                 if (Boolean.parseBoolean(quad.arg1())) {
                     continue;
@@ -214,6 +222,7 @@ public class Optimizer {
         List<Quadruple> result = new ArrayList<>();
         for (int i = 0; i < simplified.size(); i++) {
             Quadruple quad = simplified.get(i);
+            // goto L1; L1: ... → 直接跳过 goto
             if ("goto".equals(quad.op()) && i + 1 < simplified.size() && isLabel(simplified.get(i + 1)) && Objects.equals(quad.result(), simplified.get(i + 1).result())) {
                 continue;
             }
@@ -242,14 +251,17 @@ public class Optimizer {
         }
         return current;
     }
-
+//常量折叠
     private String fold(String op, String arg1, String arg2) {
+        // 一元操作符处理
         if (UNARY_OPS.contains(op)) {
             return foldUnary(op, arg1);
         }
+        // 必须两个操作数都是常量
         if (!isLiteral(arg1) || !isLiteral(arg2)) {
             return null;
         }
+        // 布尔常量折叠
         if (isBooleanLiteral(arg1) || isBooleanLiteral(arg2)) {
             return foldBoolean(op, arg1, arg2);
         }
@@ -259,7 +271,7 @@ public class Optimizer {
         if ("%".equals(op) && (!isIntegerLiteral(arg1) || !isIntegerLiteral(arg2))) {
             return null;
         }
-
+        // 数值常量折叠
         BigDecimal left = new BigDecimal(arg1);
         BigDecimal right = new BigDecimal(arg2);
         return switch (op) {
@@ -374,6 +386,7 @@ public class Optimizer {
 
     private record ExpressionKey(String op, String arg1, String arg2) {
         private ExpressionKey {
+            // 对于交换律操作符，统一参数顺序
             if (COMMUTATIVE_OPS.contains(op) && arg1 != null && arg2 != null && Comparator.nullsFirst(String::compareTo).compare(arg2, arg1) < 0) {
                 String temp = arg1;
                 arg1 = arg2;
