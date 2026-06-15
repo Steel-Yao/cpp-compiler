@@ -41,12 +41,14 @@ public class ParseTableBuilder {
             table.put(nonTerminal, new EnumMap<>(TokenType.class));
         }
 
-        for (Production production : grammar.productions()) {
+        for (Production production : grammar.productions()) { // 遍历每条产生式
+            // 计算产生式右侧符号序列的 FIRST 集
             Set<TokenType> first = calculator.firstOfSequence(production.right());
-            for (TokenType terminal : first) {
+            for (TokenType terminal : first) { // 对于 FIRST 集中的每个终结符，将产生式放入预测分析表
                 put(table, production.left(), terminal, production);
             }
 
+            // 如果产生式右侧符号序列可空，则还需要将产生式放入 FOLLOW 集中的每个终结符对应的表项
             if (calculator.isNullableSequence(production.right())) {
                 for (TokenType terminal : calculator.followSets().get(production.left())) {
                     put(table, production.left(), terminal, production);
