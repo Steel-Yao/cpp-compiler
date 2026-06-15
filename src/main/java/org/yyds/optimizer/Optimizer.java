@@ -127,7 +127,7 @@ public class Optimizer {
 
         return result;
     }
-
+//赋值记录
     private void rememberAssignment(Quadruple quad, Map<String, String> constants, Map<String, String> copies, Map<ExpressionKey, String> expressions) {
         killDefinitions(quad.result(), constants, copies, expressions);
         if (quad.result() == null) {
@@ -141,7 +141,7 @@ public class Optimizer {
             copies.put(quad.result(), quad.arg1());
         }
     }
-
+//失效处理
     private void killDefinitions(String result, Map<String, String> constants, Map<String, String> copies, Map<ExpressionKey, String> expressions) {
         if (result == null) {
             return;
@@ -230,7 +230,7 @@ public class Optimizer {
         }
         return result;
     }
-
+//传播逻辑
     private String resolveValue(String value, Map<String, String> constants, Map<String, String> copies) {
         if (value == null) {
             return null;
