@@ -129,6 +129,10 @@ docs/            # 各编译阶段设计文档
 | 中间代码优化 | [docs/optimizer-design.md](docs/optimizer-design.md) |
 | 目标代码生成 | [docs/codegen-design.md](docs/codegen-design.md) |
 
+## 开源协议
+
+本项目使用 [MIT License](LICENSE) 开源。
+
 ## 当前限制
 
 - 这是教学导向的 C++ 子集编译器，不是完整 C++ 实现。
